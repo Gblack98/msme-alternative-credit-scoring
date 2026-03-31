@@ -1,0 +1,10 @@
+fastapi>=0.110.0
+uvicorn[standard]
+pydantic>=2.0
+supabase
+lightgbm
+pandas
+numpy
+scikit-learn
+python-dotenv
+httpx
