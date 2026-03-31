@@ -1,5 +1,5 @@
 -- MSME Credit Scoring — Supabase Schema
--- Run: supabase db push
+-- Apply with: supabase db push
 
 -- Customers / businesses
 create table if not exists public.businesses (
