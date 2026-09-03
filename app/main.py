@@ -1,12 +1,7 @@
-"""
-MSME Alternative Credit Scoring API
-FastAPI + Supabase + ML — inspired by Rubyx.io
+"""Scoring API for small businesses with no banking history.
 
-Scores micro/small businesses in Africa using alternative data:
-- Mobile money transaction history
-- Telecom behavioral data (airtime usage patterns)
-- E-commerce activity
-- Social network signals
+The signal comes from mobile money: how often money moves, with how many
+counterparties, how recently, and whether income arrives on a regular basis.
 """
 
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
@@ -25,7 +20,7 @@ app = FastAPI(
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-# ── Schemas ────────────────────────────────────────────────────────────────
+# Schemas
 
 class MobileMoneySummary(BaseModel):
     """Summary of mobile money activity (MoMo, M-Pesa, Wave, Orange Money)"""
@@ -67,7 +62,7 @@ class ScoreResponse(BaseModel):
     model_version: str
 
 
-# ── Feature Engineering ────────────────────────────────────────────────────
+# Feature Engineering
 
 def extract_features(profile: BusinessProfile) -> dict:
     """Transform BusinessProfile into ML features"""
@@ -85,7 +80,7 @@ def extract_features(profile: BusinessProfile) -> dict:
             if profile.monthly_revenue_usd and profile.monthly_revenue_usd > 0 else 10.0
         ),
 
-        # Mobile money features (alternative data — key for unbanked)
+        # mobile money is the only history these businesses have
         'momo_tx_count_90d': 0,
         'momo_volume_90d': 0,
         'momo_avg_tx': 0,
@@ -142,30 +137,30 @@ def generate_explanation(features: dict, score: int) -> List[str]:
     reasons = []
 
     if features['momo_tx_count_90d'] > 30:
-        reasons.append("✅ High mobile money activity — strong financial engagement")
+        reasons.append("high mobile money activity")
     elif features['momo_tx_count_90d'] < 5:
-        reasons.append("⚠️ Low mobile money activity — limited transaction history")
+        reasons.append("low mobile money activity, thin transaction history")
 
     if features['years_in_operation'] >= 2:
-        reasons.append(f"✅ Business established for {features['years_in_operation']:.1f} years")
+        reasons.append(f"business established for {features['years_in_operation']:.1f} years")
     else:
-        reasons.append("⚠️ New business — limited operating history increases risk")
+        reasons.append("new business, short operating history")
 
     if features['has_bank_account']:
-        reasons.append("✅ Has formal bank account")
+        reasons.append("has a formal bank account")
 
     if features['loan_to_monthly_revenue'] > 5:
-        reasons.append("⚠️ Requested amount is high relative to monthly revenue")
+        reasons.append("requested amount is high against monthly revenue")
     elif features['loan_to_monthly_revenue'] < 2:
-        reasons.append("✅ Loan amount well-proportioned to monthly revenue")
+        reasons.append("loan amount in proportion to monthly revenue")
 
     if features['momo_has_regular_income']:
-        reasons.append("✅ Regular income pattern detected in mobile money history")
+        reasons.append("regular income pattern in the mobile money history")
 
     return reasons[:4]  # Top 4 factors
 
 
-# ── Endpoints ──────────────────────────────────────────────────────────────
+# Endpoints
 
 @app.post("/score", response_model=ScoreResponse)
 async def score_business(profile: BusinessProfile, background_tasks: BackgroundTasks):

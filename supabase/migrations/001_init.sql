@@ -1,4 +1,4 @@
--- MSME Credit Scoring — Supabase Schema
+-- MSME credit scoring, supabase schema
 -- Apply with: supabase db push
 
 -- Customers / businesses
@@ -49,7 +49,7 @@ select
 from public.current_scores
 group by risk_band;
 
--- RLS (Row Level Security) — important for multi-tenant setup
+-- row level security, each lender only sees its own rows
 alter table public.scoring_logs enable row level security;
 alter table public.businesses enable row level security;
 

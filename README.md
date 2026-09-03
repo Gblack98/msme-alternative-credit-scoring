@@ -1,22 +1,24 @@
-# 🌍 MSME Alternative Credit Scoring — Africa
+# MSME Alternative Credit Scoring
 
-![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E) ![Africa](https://img.shields.io/badge/Market-Africa-orange) ![Financial Inclusion](https://img.shields.io/badge/SDG-Financial_Inclusion-blue)
+Scoring API for micro and small businesses that have no bank statement, no tax record
+and no credit history, but do leave a mobile money trail.
 
-> Real-time credit scoring API for micro/small businesses in Africa using **alternative data** (mobile money, behavioral signals) — because **80% of MSMEs are unbanked** and excluded from traditional credit.
+The score is built from that trail: transaction count and volume over 90 days, number
+of counterparties, recency, whether income arrives regularly, plus the age of the
+business and the size of the request against monthly revenue.
 
-## Problem
+## Status
 
-Traditional credit scoring requires: bank statements, tax records, collateral, credit history.  
-In Sub-Saharan Africa, **60-80% of adults lack formal banking** — but they do have:
-- 📱 Mobile money history (Wave, M-Pesa, Orange Money, MoMo)
-- 📞 Telecom behavioral data
-- 🛒 E-commerce transaction history
-- 📍 Geolocation patterns
+The scorecard is currently a set of weighted rules, not a trained model. The features
+are already extracted and logged, so the weights can be replaced by a model once there
+is enough repayment history to learn from. See the TODO in `app/main.py`.
 
-## API — Score a Business in Real-Time
+## API
 
 ```bash
-curl -X POST https://api.your-domain.com/score   -H "Content-Type: application/json"   -d '{
+curl -X POST http://localhost:8000/score \
+  -H "Content-Type: application/json" \
+  -d '{
     "business_id": "BIZ-001",
     "country_code": "SN",
     "sector": "retail",
@@ -32,7 +34,6 @@ curl -X POST https://api.your-domain.com/score   -H "Content-Type: application/j
   }'
 ```
 
-**Response:**
 ```json
 {
   "credit_score": 680,
@@ -41,35 +42,30 @@ curl -X POST https://api.your-domain.com/score   -H "Content-Type: application/j
   "max_loan_amount_usd": 1500,
   "recommended_rate_pct": 12.0,
   "explanation": [
-    "✅ High mobile money activity — strong financial engagement",
-    "✅ Business established for 2.5 years",
-    "✅ Regular income pattern detected"
+    "high mobile money activity",
+    "business established for 2.5 years",
+    "regular income pattern detected"
   ]
 }
 ```
 
+Score bands: A above 700, B above 600, C above 500 and sent to review, D declined.
+
 ## Stack
 
-```
-FastAPI          → REST API (scoring endpoint, <100ms latency)
-Supabase         → PostgreSQL + RLS + real-time audit log
-LightGBM         → ML scoring model (trained on historical repayment data)
-dbt              → Feature engineering from raw transactions
-```
-
-## Countries Supported
-
-Senegal 🇸🇳 · Côte d'Ivoire 🇨🇮 · Nigeria 🇳🇬 · Kenya 🇰🇪 · Ghana 🇬🇭 · Cameroon 🇨🇲
+FastAPI for the endpoint, Supabase for storage and the audit log. Every score is
+written to Supabase in the background, so a decision can be explained after the fact.
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env  # Add SUPABASE_URL, SUPABASE_KEY
-supabase db push      # Apply migrations
+export SUPABASE_URL=... SUPABASE_KEY=...
+supabase db push
 uvicorn app.main:app --reload
 ```
 
 ## Author
 
-**Ibrahima Gabar Diop** — [GitHub](https://github.com/Gblack98) · [Kaggle](https://www.kaggle.com/ibrahimagabardiop)
+Ibrahima Gabar Diop
+[GitHub](https://github.com/Gblack98) · [Kaggle](https://www.kaggle.com/ibrahimagabardiop)
